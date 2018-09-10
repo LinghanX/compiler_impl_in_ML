@@ -53,7 +53,7 @@ fun lookup (table, id) =
 		| (identifier, value) :: xs => 
 		    if identifier = id then value else lookup (xs, id)
 
-fun interpStm (stm, table) : table = 
+fun interpStm (stm, table) = 
     case stm of 
 	    CompoundStm (stm1, stms) => interpStm(stms, (interpStm(stm1, table)))
 		| AssignStm (id, exp) => 
@@ -71,7 +71,7 @@ fun interpStm (stm, table) : table =
 					in
 						interpStm (PrintStm xs, newTable)
 					end
-and interpExp (exp, table) : int * table = 
+and interpExp (exp, table) = 
     case exp of 
 	    IdExp id => (lookup(table, id), table)
 		| NumExp num => (num, table)

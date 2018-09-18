@@ -23,8 +23,9 @@ digits=[0-9]+;
 %s COMMENT;
 %%
 
+<INITIAL> ["]((\\.)|([^\\"]))*["] => (Tokens.STRING(yytext, yypos, yypos + size yytext));
 <INITIAL> "\n" => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
-<INITIAL> " " => (continue());
+<INITIAL> " " => (linePos := yypos :: !linePos; continue());
 <INITIAL> "\t" => (continue());
 <INITIAL> "\/\*" => (YYBEGIN COMMENT; continue());
 <COMMENT> . => (continue()); 
@@ -69,7 +70,6 @@ digits=[0-9]+;
 <INITIAL> ";" => (Tokens.SEMICOLON(yypos, yypos + 1));
 <INITIAL> ":" => (Tokens.COLON(yypos, yypos + 1));
 <INITIAL> "," => (Tokens.COMMA(yypos, yypos + 1));
-<INITIAL> ["]([\\"]|[^\"])*["] => (Tokens.STRING(yytext, yypos, yypos + size yytext));
 <INITIAL> {digits} => (Tokens.INT(valOf(Int.fromString yytext), yypos, yypos + size yytext));
 <INITIAL> [a-zA-Z][a-zA-Z0-9]* => (Tokens.ID(yytext, yypos, yypos + size yytext));
 <INITIAL> \0 => (Tokens.EOF(yypos, yypos));

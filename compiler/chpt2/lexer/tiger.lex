@@ -5,19 +5,9 @@ val lineNum = ErrorMsg.lineNum
 val linePos = ErrorMsg.linePos
 fun err(p1,p2) = ErrorMsg.error p1
 
-val commentLvl = 0;
+val commentLvl = ref 0;
 fun eof() = let val pos = hd(!linePos) in Tokens.EOF(pos,pos) end
 
-(*   
-
-<COMMENT> "\*\/" => (
-    if (commentLvl = 0) then YYBEGIN INITIAL; 
-    else commentLvl := commentLvl - 1; 
-    continue());
-
-<COMMENT> "\/\*"  => (commentLvl := commentLvl + 1; continue());
-
-*)
 %% 
 digits=[0-9]+;
 %s COMMENT;
@@ -26,10 +16,13 @@ digits=[0-9]+;
 <INITIAL> ["]((\\.)|([^\\"]))*["] => (Tokens.STRING(yytext, yypos, yypos + size yytext));
 <INITIAL> \n|\r|\r\n => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 <INITIAL> " " => (linePos := yypos :: !linePos; continue());
-<INITIAL> "\t" => (continue());
-<INITIAL> "\/\*" => (YYBEGIN COMMENT; continue());
+<INITIAL> \t => (continue());
+<INITIAL> \/\* => (YYBEGIN COMMENT; continue());
+<COMMENT> \*\/ => (
+    if (!commentLvl = 0) then (YYBEGIN INITIAL; continue())
+    else (commentLvl := !commentLvl - 1; continue()));
+<COMMENT> \/\* => (commentLvl := !commentLvl + 1; continue());
 <COMMENT> . => (continue()); 
-<COMMENT> "\*\/" => (YYBEGIN INITIAL; continue());
 <INITIAL> type => (Tokens.TYPE(yypos, yypos + 4));
 <INITIAL> var => (Tokens.VAR(yypos,yypos + size "var"));
 <INITIAL> function => (Tokens.FUNCTION(yypos, yypos + size "function"));

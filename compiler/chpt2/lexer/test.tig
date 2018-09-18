@@ -1,4 +1,5 @@
 /* A program to solve the 8-queens problem */
+/* A comment inside a comment /* is here !*/ */
 
 let
     var N := 8

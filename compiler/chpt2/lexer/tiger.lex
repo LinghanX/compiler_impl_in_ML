@@ -24,7 +24,7 @@ digits=[0-9]+;
 %%
 
 <INITIAL> ["]((\\.)|([^\\"]))*["] => (Tokens.STRING(yytext, yypos, yypos + size yytext));
-<INITIAL> "\n" => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
+<INITIAL> \n|\r|\r\n => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 <INITIAL> " " => (linePos := yypos :: !linePos; continue());
 <INITIAL> "\t" => (continue());
 <INITIAL> "\/\*" => (YYBEGIN COMMENT; continue());
@@ -48,7 +48,7 @@ digits=[0-9]+;
 <INITIAL> if => (Tokens.IF(yypos, yypos + 2));
 <INITIAL> array => (Tokens.ARRAY(yypos, yypos + size "array"));
 <INITIAL> ":=" => (Tokens.ASSIGN(yypos, yypos + 2));  
-<INITIAL> or => (Tokens.OR(yypos, yypos + 2));
+<INITIAL> \| => (Tokens.OR(yypos, yypos + 2));
 <INITIAL> "&" => (Tokens.AND(yypos, yypos + 1));
 <INITIAL> ">" => (Tokens.GT(yypos, yypos + 1));
 <INITIAL> ">=" => (Tokens.GE(yypos, yypos + 2));

@@ -11,7 +11,14 @@
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
 
-%nonterm  exp | program
+%nonterm  
+  exp 
+  | program 
+  | r_val | valueless_exp 
+  | declarations | declaration
+  | type_dec | vardec | fundec | ty | tyfield | more_tyfield
+  | l_val
+
 
 %pos int
 %verbose
@@ -33,6 +40,45 @@
 %%
 
 program	: exp				()
+exp: r_val 			()
+    | valueless_exp ()
+    | NIL ()
+    | LPAREN more_exp exp RPAREN () (* come back to address this *)
+    | LPAREN RPAREN ()
+    |  ()
+    | STRING ()
 
-	
-exp: 			()
+more_exp : 
+    NIL ()
+    | exp SEMICOLON more_exp ()
+
+declarations 
+    :  ()
+    | declaration declarations ()
+
+declaration :
+    type_dec ()
+    | vardec ()
+    | fundec ()
+
+type_dec : TYPE type_id EQ ty ()
+
+ty : type_id ()
+    | LBRACK ID RBRACK ()
+    | ARRAY OF ID ()
+
+tyfield : ()
+    | ID COLON ID more_tyfield
+
+more_tyfield : ()
+    | COMMA COLON ID more_tyfield ()
+
+vardec : VAR ID ASSIGN exp ()
+    | VAR ID COLON ID ASSIGN exp ()
+
+fundec : FUNCTION ID LPAREN tyfield RPAREN EQ exp ()
+    | FUNCTION ID LPAREN tyfield RPAREN COLON ID EQ exp ()
+
+l_val : ID ()
+    | l_val DOT ID () 
+    | l_val LBRACE exp RBRACE ()

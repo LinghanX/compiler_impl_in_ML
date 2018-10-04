@@ -5,9 +5,24 @@ val lineNum = ErrorMsg.lineNum
 val linePos = ErrorMsg.linePos
 fun err(p1,p2) = ErrorMsg.error p1
 
-val commentLvl = ref 0;
-fun eof() = let val pos = hd(!linePos) in Tokens.EOF(pos,pos) end
+(* Here we initiate a box for `comment level`, in that
+   each time we encounter a `/*`, we ask: am i in the 
+   `comment` state, if so, we increment commentLvl by
+   1, otherwise we begin `comment` state.
 
+   When we see a `*/`, we consult the value of commentLvl,
+   if its 0, then we end `comment` state, otherwise we 
+   decrement commentLvl by 1
+ *)
+val commentLvl = ref 0;
+val stringBuf = "";
+fun eof() = 
+    let 
+        val pos = hd(!linePos) 
+    in 
+        if (!commentLvl = 1) then (print "error: comment"; Tokens.EOF(pos, pos))
+        else (Tokens.EOF(pos,pos))
+    end
 %% 
 digits=[0-9]+;
 %s COMMENT;
@@ -17,9 +32,9 @@ digits=[0-9]+;
 <INITIAL> \n|\r|\r\n => (lineNum := !lineNum+1; linePos := yypos :: !linePos; continue());
 <INITIAL> " " => (linePos := yypos :: !linePos; continue());
 <INITIAL> \t => (continue());
-<INITIAL> \/\* => (YYBEGIN COMMENT; continue());
+<INITIAL> \/\* => (YYBEGIN COMMENT; commentLvl := !commentLvl + 1; continue());
 <COMMENT> \*\/ => (
-    if (!commentLvl = 0) then (YYBEGIN INITIAL; continue())
+    if (!commentLvl = 1) then (commentLvl := 0; YYBEGIN INITIAL; continue())
     else (commentLvl := !commentLvl - 1; continue()));
 <COMMENT> \/\* => (commentLvl := !commentLvl + 1; continue());
 <COMMENT> . => (continue()); 
@@ -65,4 +80,3 @@ digits=[0-9]+;
 <INITIAL> "," => (Tokens.COMMA(yypos, yypos + 1));
 <INITIAL> {digits} => (Tokens.INT(valOf(Int.fromString yytext), yypos, yypos + size yytext));
 <INITIAL> [a-zA-Z][a-zA-Z0-9]* => (Tokens.ID(yytext, yypos, yypos + size yytext));
-<INITIAL> \0 => (Tokens.EOF(yypos, yypos));

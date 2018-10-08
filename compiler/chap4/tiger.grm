@@ -13,7 +13,14 @@ structure A = Absyn
   | BREAK | NIL
   | FUNCTION | VAR | TYPE 
 
-%nonterm  exp | program of A.exp
+%nonterm  
+    exp 
+    | program | l_value
+    | decs | dec | typedecs | vardec | fundecs | typedec | funcdec
+    | ty | ty_fields | more_ty_fields | unit_exp | record_creation
+    | array_creation | expseq | record | more_records | record_creation_list
+    | func_call | arith_exp | com_exp | bool_exp | fundec | explist_nonempty
+    | explist 
 
 %pos int
 %verbose
@@ -34,7 +41,103 @@ structure A = Absyn
 
 %%
 
-program	: exp				(exp)
+(* This is a skeleton grammar file, meant to illustrate what kind of
+ * declarations are necessary above the %% mark.  Students are expected
+ *  to replace the two dummy productions below with an actual grammar. 
+ *)
 
-	
-exp: NIL		(A.NilExp)
+program	: 
+    exp				()
+exp:
+    l_value ()
+    | decs ()
+    | INT ()
+    | NIL ()
+    | unit_exp ()
+    | record_creation ()
+    | array_creation ()
+    | l_value ASSIGN exp ()
+    | IF exp THEN exp ELSE exp ()
+    | IF exp THEN exp ()
+    | WHILE exp DO exp ()
+    | FOR ID ASSIGN exp TO exp DO exp  ()
+    | BREAK  ()
+    | LET decs IN expseq END ()
+    | LPAREN expseq RPAREN ()
+    | func_call ()
+    | arith_exp ()
+    | com_exp ()
+    | bool_exp ()
+
+unit_exp: LPAREN RPAREN ()
+
+func_call: ID LPAREN explist RPAREN ()
+
+explist: ()
+    | explist_nonempty ()
+explist_nonempty: exp ()
+    | explist COMMA exp ()
+
+decs 
+    : ()
+    | dec decs ()
+
+dec:
+    typedecs ()
+    | vardec ()
+    | fundecs ()
+
+vardec: VAR ID ASSIGN exp ()
+    | VAR ID COLON ID ASSIGN exp ()
+
+fundecs: fundec ()
+    | fundec fundecs ()
+
+fundec:
+    FUNCTION ID LPAREN ty_fields RPAREN EQ exp ()
+    | FUNCTION ID LPAREN ty_fields RPAREN COLON ID EQ exp ()
+
+record_creation: ID LBRACE record_creation_list RBRACE ()
+record_creation_list: ()
+    | record more_records ()
+
+record: ID EQ exp ()
+more_records: ()
+    | COMMA record more_records ()
+
+array_creation: ID LBRACK exp RBRACK OF exp ()
+
+expseq: exp ()
+    | exp SEMICOLON expseq ()
+
+typedecs :
+    typedec ()
+    | typedec typedecs ()
+
+typedec: TYPE ID EQ ty ()
+ty: ID ()
+    | LBRACE ty_fields RBRACE () 
+    | ARRAY OF ID ()
+ty_fields: ()
+    | ID COLON ID more_ty_fields ()
+more_ty_fields: ()
+    | COMMA ID COLON ID more_ty_fields ()
+
+arith_exp: 
+    exp PLUS exp ()
+    | exp MINUS exp ()
+    | exp TIMES exp ()
+    | exp DIVIDE exp ()
+
+com_exp: 
+    exp EQ exp ()
+    | exp NEQ exp ()
+    | exp LT exp ()
+    | exp LE exp ()
+    | exp GT exp ()
+    | exp GE exp ()
+
+l_value: 
+    ID ()
+    | l_value DOT ID  ()
+    | l_value LBRACK exp RBRACK ()

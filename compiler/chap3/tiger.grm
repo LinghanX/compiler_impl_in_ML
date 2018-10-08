@@ -17,7 +17,7 @@
     | decs | dec | typedecs | vardec | fundecs | typedec | funcdec
     | ty | ty_fields | more_ty_fields | unit_exp | record_creation
     | array_creation | expseq | record | more_records | record_creation_list
-    | func_call | arith_exp | com_exp | bool_exp | fundec | explist_nonempty
+    | func_call | arith_exp | com_exp | bool_exp | fundec | more_exp
     | explist 
 
 %pos int
@@ -69,12 +69,13 @@ exp:
 
 unit_exp: LPAREN RPAREN ()
 
-func_call: ID LPAREN explist RPAREN ()
+func_call: ID LPAREN RPAREN ()
+    | ID LPAREN explist RPAREN ()
 
-explist: ()
-    | explist_nonempty ()
-explist_nonempty: exp ()
-    | explist COMMA exp ()
+explist: exp more_exp ()
+
+more_exp: ()
+    | COMMA exp more_exp ()
 
 decs 
     : ()

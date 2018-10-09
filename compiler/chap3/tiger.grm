@@ -9,12 +9,12 @@
   | AND | OR | ASSIGN
   | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF 
   | BREAK | NIL
-  | FUNCTION | VAR | TYPE 
+  | FUNCTION | VAR | TYPE | UMINUS
 
 %nonterm  
     exp 
     | program | l_value
-    | decs | dec | typedecs | vardec | fundecs | typedec | funcdec
+    | decs | dec | typedecs | vardec | fundecs | typedec 
     | ty | ty_fields | more_ty_fields | unit_exp | record_creation
     | array_creation | expseq | record | more_records | record_creation_list
     | func_call | arith_exp | com_exp | bool_exp | fundec | more_exp
@@ -30,6 +30,14 @@
 
 %keyword WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN ELSE 
 	DO OF NIL
+
+%nonassoc ASSIGN
+%nonassoc COLON
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE 
+%left UMINUS
+%left AND OR
 
 %prefer THEN ELSE LPAREN
 
@@ -48,8 +56,8 @@ program	:
     exp				()
 exp:
     l_value ()
-    | decs ()
     | INT ()
+    | STRING ()
     | NIL ()
     | unit_exp ()
     | record_creation ()
@@ -66,6 +74,7 @@ exp:
     | arith_exp ()
     | com_exp ()
     | bool_exp ()
+    | MINUS exp %prec UMINUS ()
 
 unit_exp: LPAREN RPAREN ()
 
@@ -79,7 +88,7 @@ more_exp: ()
 
 decs 
     : ()
-    | dec decs ()
+    | decs dec ()
 
 dec:
     typedecs ()
@@ -90,7 +99,7 @@ vardec: VAR ID ASSIGN exp ()
     | VAR ID COLON ID ASSIGN exp ()
 
 fundecs: fundec ()
-    | fundec fundecs ()
+    | fundecs fundec ()
 
 fundec:
     FUNCTION ID LPAREN ty_fields RPAREN EQ exp ()
@@ -135,6 +144,9 @@ com_exp:
     | exp LE exp ()
     | exp GT exp ()
     | exp GE exp ()
+
+bool_exp: exp AND exp ()
+    | exp OR exp ()
 
 l_value: 
     ID ()

@@ -38,6 +38,8 @@
 %left TIMES DIVIDE 
 %left UMINUS
 %left AND OR
+%right THEN ELSE DO
+%right OF
 
 %prefer THEN ELSE LPAREN
 
@@ -120,7 +122,7 @@ expseq: exp ()
 
 typedecs :
     typedec ()
-    | typedec typedecs ()
+    | typedecs typedec ()
 
 typedec: TYPE ID EQ ty ()
 ty: ID ()

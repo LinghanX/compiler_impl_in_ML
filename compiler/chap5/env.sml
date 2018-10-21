@@ -31,46 +31,18 @@ struct
         ("string", Types.STRING), 
         ("unit", Types.UNIT)]
     val stdFunctions = [
-        ("print", FunEntry {
-            formals = [Types.STRING],
-            result = Types.UNIT
-            }),
-        ("flush", FunEntry {
-            formals = [],
-            result = Types.UNIT
-        }),
-        ("getchar", FunEntry {
-            formals = [],
-            result = Types.UNIT
-        }),
-        ("ord", FunEntry {
-            formals = [Types.STRING],
-            result = Types.INT
-        }),
-        ("chr", FunEntry {
-            formals = [Types.INT],
+        ("print", FunEntry { formals = [Types.STRING], result = Types.UNIT }),
+        ("flush", FunEntry { formals = [], result = Types.UNIT }),
+        ("getchar", FunEntry { formals = [], result = Types.UNIT }),
+        ("ord", FunEntry { formals = [Types.STRING], result = Types.INT }),
+        ("chr", FunEntry { formals = [Types.INT], result = Types.STRING }),
+        ("size", FunEntry { formals = [Types.STRING], result = Types.INT }), 
+        ("substring", FunEntry { formals = [Types.STRING, Types.INT, Types.INT],
             result = Types.STRING
         }),
-        ("size", FunEntry {
-            formals = [Types.STRING],
-            result = Types.INT
-        }), 
-        ("substring", FunEntry {
-            formals = [Types.STRING, Types.INT, Types.INT],
-            result = Types.STRING
-        }),
-        ("concat", FunEntry {
-            formals = [Types.STRING, Types.STRING],
-            result = Types.STRING
-        }),
-        ("not", FunEntry {
-            formals = [Types.INT],
-            result = Types.INT
-        }),
-        ("exit", FunEntry {
-            formals = [Types.INT],
-            result = Types.UNIT
-        })
+        ("concat", FunEntry { formals = [Types.STRING, Types.STRING], result = Types.STRING }),
+        ("not", FunEntry { formals = [Types.INT], result = Types.INT }),
+        ("exit", FunEntry { formals = [Types.INT], result = Types.UNIT })
     ]
 
     val base_tenv = List.foldr addType Symbol.empty primeTypes

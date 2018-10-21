@@ -1,0 +1,12 @@
+/* This will test string literals */
+" *** STRING TESTS *** "
+" *** (1) newline
+ *** "
+" *** (2) tab	*** "
+" *** (3) single ASCII code 065 \065 \098 *** "
+" *** (4) double quote \" *** "
+" *** (5) backslash character \\ *** "
+" *** (6) ignored whitespace\ 	 	 
+		  \ ***"
+" *** (7) control character newline \^J formfeed \^L carriage return \^M ***"
+" *** STRING TEST COMPLETE *** "

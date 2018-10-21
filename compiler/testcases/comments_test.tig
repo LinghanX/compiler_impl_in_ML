@@ -1,0 +1,12 @@
+/* (1) This will test an unfinished comment */
+" *** NESTED COMMENT TEST *** "
+
+/* (2) Nested /* comment validate */ done. */
+
+/* (3) triple /* nested /* comment */ test */ done. */
+" \" *** triple nested comment complete. *** \"  "
+
+" *** unfinished nested comment *** "
+
+/* (4) /* partial nest */
+

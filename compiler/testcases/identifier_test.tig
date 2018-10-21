@@ -1,0 +1,12 @@
+/* 
+    this is a test that covers identifiers 
+    Quote tiger:
+    An identifier is a sequence of letters, digits, and underscores,
+    starting with a letter. Uppercase letters are distinguished from
+    lowercase.
+*/
+
+a_legit_var 
+A_legit_var
+a1_legitVar
+1_not_legit_var

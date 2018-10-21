@@ -1,0 +1,6 @@
+/* (1) This will test an unfinished comment */
+" *** COMMENT ERROR TEST *** "
+
+/* (2) Nested /* comment validate */ done. */
+
+/*

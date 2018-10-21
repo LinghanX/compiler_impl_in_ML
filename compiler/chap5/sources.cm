@@ -11,6 +11,7 @@ symbol.sml
 parse.sml
 tiger.lex
 tiger.grm
+types.sml
 main.sml
 $/smlnj-lib.cm
 $/ml-yacc-lib.cm

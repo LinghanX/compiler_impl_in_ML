@@ -12,6 +12,7 @@ end
 structure Env : ENV =
 struct
     type access = unit 
+    type ty = Types.ty
     datatype enventry = 
         VarEntry of { ty: Types.ty }
         | FunEntry of { formals: Types.ty list, result: Types.ty }
@@ -19,8 +20,8 @@ struct
     type tenv = Types.ty Symbol.table 
     type venv = enventry Symbol.table 
 
-    fun addType((typeName, type), tenv) 
-        = Symbol.enter (tenv, Symbol.symbol typeName, type)
+    fun addType((typeName, type'), tenv) 
+        = Symbol.enter (tenv, Symbol.symbol typeName, type')
     
     fun addVal((name, enventry), venv) 
         = Symbol.enter (venv, Symbol.symbol name, enventry)

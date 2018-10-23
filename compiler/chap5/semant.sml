@@ -75,20 +75,20 @@ struct
                 in
                     checkType(hd(fieldTypes), findType(typ))
                 end 
-            | trexp (A.SeqExp((exp, pos)::rst)) = (* to be implemented *)
+            | trexp (A.SeqExp((exp, pos)::rst)) = {exp = (), ty = Types.UNIT}
             | trexp (A.AssignExp{var, exp, pos}) = {exp = (), ty = Types.UNIT}
             | trexp (A.IfExp(test, then', else', pos)) = 
                 let 
-                    val {_, ty = testType} = transExp test 
-                    val {_, ty = thenType} = transExp then'
-                    val {_, ty = elseType} = transExp else'
+                    val { ty = testType} = transExp test 
+                    val { ty = thenType} = transExp then'
+                    val { ty = elseType} = transExp else'
                 in 
                     (checkType(testType, Types.INT, pos)(checkType(thenType, elseType, pos)))
                 end
             | trexp (A.WhileExp{test, body, pos}) = 
                 let 
-                    val {_, ty = testType} = transExp test 
-                    val {_, ty = bodyType} = transExp exp 
+                    val { ty = testType} = transExp test 
+                    val { ty = bodyType} = transExp exp 
                 in 
                     (checkType(test, Types.INT, pos)
                     {exp = (), ty = Types.UNIT})
@@ -108,31 +108,74 @@ struct
                     of SOME(E.VarEntry{ty}) => {exp=(), ty = actual_ty ty}
                     | NONE => (error pos ("undefined variable " ^ S.name id);
                     {exp = (), ty = Types.INT}))
-                (* | trvar (A.FieldVar(v, id, pos)) = ... *)
+                | trvar (A.FieldVar(v, id, pos)) = {exp = (), ty = Types.UNIT}
+                | trvar (A.SubscriptVar(var, exp, pos)) = 
+                    let val {exp, ty} = transExp exp in 
+                        (checkType(ty, Types.INT, pos)
+                        {exp = (), ty = Types.UNIT})
+                    end 
         in 
             trexp exp
         end 
     
-    fun transDec (venv, tenv, A.VarDec{name, typ = NONE, init, ...}) = 
-            let 
-                val {exp, ty} = transExp (venv, tenv, init)
-            in 
-                {tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
-            end
-        | transDec (venv, tenv, A.TypeDec[{name, ty}]) = 
-            {venv = venv, tenv = S.enter(tenv, name, transTy(tenv, ty))}
-        | transDec (venv, tenv, A.FunctionDec[{name, params, body, pos, result = SOME(rt, pos)}]) = 
-            let 
-                val SOME(result_ty) = S.look(tenv, rt)
-                fun transparam{name, typ, pos} = 
-                    case S.look(tenv, typ) of SOME t => {name=name, ty = t}
-                val params' = map transparam params
-                val venv' = S.enter(venv, name, E.FunEntry{formals = map #ty params', result = result_ty})
-                fun enterparam ({name, ty}, venv) = S.enter(venv, name, E.VarEntry{access=(), ty=ty})
-                val venv'' = fold enterparam params' venv'
-            in 
-                transExp(venv'', tenv) body;
-                {venv=venv', tenv = tenv}
-            end 
+    and transDecs(venv,tenv) =
+        let
+            fun trdec (venv,tenv,A.VarDec{name,escape,typ=NONE,init,pos}) =
+                let 
+                    val {exp,ty} = transExp(venv,tenv) init
+                in 
+                    {tenv=tenv,venv = S.enter(venv,name,E.VarEntry{ty=ty})}
+                end
+            | trdec (venv,tenv,A.VarDec{name,escape,typ=SOME(tysym, _),init,pos}) =
+                (case S.look(tenv,tysym) of 
+                    SOME(ty) => {tenv=tenv,venv=S.enter(venv,name,E.VarEntry{ty=ty})}
+                    | NONE => (Err.error pos "Type not defined: " ^ S.name tysym); 
+                        {tenv=tenv,venv=venv})
+            | trdec(venv,tenv,A.TypeDec(tydecs)) =
+                    let
+                        fun newdec ({name,ty,pos}, env) = 
+                            S.enter(env,name,transTy(env,ty))
+                        val tenv' = foldr newdec tenv tydecs
+                    in
+                        { venv=venv,tenv=tenv' }
+                    end
+                    
+            | trdec(venv,tenv,A.FunctionDec(fundecs)) =
+                    let
+                        val venv'   = foldr transFun (venv,tenv) venv fundecs
+                    in {venv=venv',tenv=tenv} end
+        in
+            trdec
+        end
+    and transParam (venv,tenv) {name,typ,pos} =
+          case S.look(tenv,typ) of 
+               SOME t => {name=name,ty=t}
+             | NONE => (Err.error 0 ("Parameter type not declared: " ^ S.name rt);
+                       {name=name,ty=T.NIL})
+    and transFun ((venv,tenv),{name,params,body,pos,result=SOME(rt,pos)}) =
+        (case S.look(tenv,rt) of
+            NONE => (Err.error 0 ("Return type not declared: " ^ S.name rt); NONE)
+            | SOME(result_ty) =>
+                let
+                    fun enterparam ({name,ty},venv) = S.enter(venv,name,E.VarEntry{access=(),ty=ty})
+                    val params' = map (transParam (venv,tenv)) params
+                    val entry = E.FunEntry{formals= map #ty params',result=result_ty}
+                    val venv'   = S.enter(venv,name,entry)
+                    val venv''  = foldr enterparam params' venv'
+                in
+                    transExp (venv'',tenv=tenv) body;
+                    SOME entry
+                end )
+      | transFun {name,params,body,pos,result=NONE} =
+        let
+          fun enterparam ({name,ty},venv) = S.enter(venv,name,E.VarEntry{access=(),ty=ty})
+          val params' = map (transParam (venv,tenv)) params
+          val entry   = E.FunEntry{formals= map #ty params',result=T.UNIT}
+          val venv'   = S.enter(venv,name,entry)
+          val venv''  = foldr enterparam params' venv'
+        in
+          transExp(venv'',tenv=tenv) body;
+          SOME entry
+        end
     fun transProg(exp: Absyn.exp) = transExp(Env.base_venv, Env.base_tenv, exp)
 end 

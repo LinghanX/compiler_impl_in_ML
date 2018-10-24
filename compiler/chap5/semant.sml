@@ -13,30 +13,46 @@ structure Semant =
 struct 
     structure A = Absyn
     structure S = Symbol
+    structure E = Env 
+    structure T = Types
     val error = ErrorMsg.error 
     type expty = { exp: Translate.exp, ty: Types.ty }
 
+    fun checkInt ({exp, ty}, pos) = case ty of 
+        Types.INT => () 
+        | _ => (error pos "integer required")
+    fun findType (ty, pos) = case ty of 
+        Types.NAME(sym, tyop) => 
+            (case !tyop of 
+                SOME(T.NAME(sym', typo')) => findType(T.NAME(sym', typo'))
+                | SOME(ty'') => ty''
+                | NONE => T.NIL)
+        | _ => ty 
+    fun findBaseType T.NAME(sym, tyop) = findType(T.NAME(sym, tyop))
+        | findBaseType T.ARRAY(ty, uniqRef) = findBaseType(ty)
+        | findBaseType ty => ty 
+    fun checkType(ty1, ty2) = 
+        case (ty1, ty2) of 
+            (T.INT, T.INT) => true 
+            | (T.NIL, T.NIL) => true 
+            | (T.UNIT, T.UNIT) => true 
+            | (T.RECORD(lst1, uniq1), T.RECORD(lst2, uniq2)) => (uniq1 = uniq2)
+            | (T.ARRAY(ty1, uniq1), T.ARRAY(ty2, uniq2)) => (uniq1 = uniq2)
+            | (T.NAME(name1, tyop1), T.NAME(name2, tyop2)) => 
+                checkType(findBaseType(T.NAME(name1, tyop1), findBaseType(name2, tyop2)))
+            | (T.NAME(name1, tyop1), _) => (checkType(findBaseType(T.NAME(name1, tyop1), ty2)))
+            | (_, T.NAME(name2, tyop2)) => (checkType(findBaseType(T.NAME(name2, tyop2), ty1)))
+            | _ => false
+    fun checkSameType({exp1, ty1}, {exp2, ty2}, pos) = 
+        let 
+            val ty1' = findType(ty1, pos)
+            val ty2' = findType(ty2, pos)
+        in 
+            checkType(ty1, ty2)
+        end 
+
     fun transExp(venv, tenv, exp) = 
         let 
-            fun checkType(ty1, ty2, pos) = case ty1 of 
-                Types.INT => case ty2 of Types.INT => {exp = (), ty = Types.INT} | _ => error pos ("integer required") 
-                | Types.STRING => case ty2 of Types.STRING => {exp = (), ty = Types.STRING} | _ => error pos ("string required")
-                | Types.ARRAY(ty) => case ty2 of Types.ARRAY(ty2) => {exp = (), ty = Types.ARRAY(ty2)} | _ => error pos ("array required")
-            fun checkInt ({exp, ty}, pos) = case ty of 
-                Types.INT => () | _ => error pos "integer required";
-            fun findType ty = case ty of 
-                Types.NAME(sym, tyop) => 
-                    case !tyop of 
-                        SOME(ty') => S.look(tenv, ty')
-                        | NONE => error ("unknown type")
-                | _ => ty 
-            fun checkSameType({exp1, ty1}, {exp2, ty2}, pos) = 
-                let 
-                    val ty1' = findType(ty1)
-                    val ty2' = findType(ty2)
-                in 
-                    checkType(ty1, ty2, pos)
-                end 
             fun trexp (A.OpExp{left, oper, right, pos}) = 
                 let in case oper of 
                     PlusOp => (checkInt(trexp left, pos) checkInt(trexp right, pos); {exp = (), ty = Types.INT})
@@ -54,9 +70,9 @@ struct
             | trexp(A.LetExp{decs, body, pos}) = 
                 let val {venv = venv', tenv = tenv'} = transDecs(venv, tenv, decs)
                 in transExp(venv', tenv') body end
-            | trexp (A.NilExp) = {exp = (), ty = Types.Unit}
-            | trexp (A.IntExp) = {exp = (), ty = Types.INT}
-            | trexp (A.StringExp) = {exp = (), ty = Types.STRING}
+            | trexp (A.NilExp) = {exp = (), ty = Types.UNIT}
+            | trexp (A.IntExp(i)) = {exp = (), ty = Types.INT}
+            | trexp (A.StringExp(str, pos)) = {exp = (), ty = Types.STRING}
             | trexp (A.VarExp(var)) = trvar var
             | trexp (A.CallExp{func, args, pos}) = 
                 let 
@@ -67,13 +83,13 @@ struct
                 end 
             | trexp (A.RecordExp{fields, typ, pos}) = 
                 let 
-                    val recordType = findType typ
+                    val recordType = findType (typ, pos)
                     fun getFieldType field{symbol, exp, pos} = 
                         let val {exp, ty'} = transExp(exp)
                         in ty' end
                     val fieldTypes = foldl getFieldType [] fields
                 in
-                    checkType(hd(fieldTypes), findType(typ))
+                    checkType(hd(fieldTypes), findType(typ, pos))
                 end 
             | trexp (A.SeqExp((exp, pos)::rst)) = {exp = (), ty = Types.UNIT}
             | trexp (A.AssignExp{var, exp, pos}) = {exp = (), ty = Types.UNIT}
@@ -97,7 +113,7 @@ struct
             | trexp (A.ArrayExp{typ, size, init, pos}) = 
                 let 
                     val sizeType = transExp size
-                    val ty' = findType typ 
+                    val ty' = findType (typ, pos) 
                     val initType = transExp init 
                 in 
                     (checkType(sizeType, Types.INT, pos)

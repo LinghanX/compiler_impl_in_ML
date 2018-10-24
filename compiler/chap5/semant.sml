@@ -79,28 +79,34 @@ struct
                 let 
                     fun trargs (arg, args) = let val {exp = _, ty = ty'} = trexp arg in ty'::args end 
                     val args' = foldl trargs [] args 
+                    val SOME(E.FunEntry{formals = lst, result = result'}) = S.look(venv, func)
                 in 
-                    {exp = (), ty = checkType(hd(args'), S.look(tenv, func))}
+                    if (checkType(hd(arg'), result')) then 
+                        {exp = (), ty = hd(arg')}
+                    else {exp = (), ty = T.NIL}
                 end 
             | trexp (A.RecordExp{fields, typ, pos}) = 
                 let 
                     val recordType = findType (typ)
                     fun getFieldType field{symbol, exp, pos} = 
-                        let val {exp, ty'} = transExp(exp)
+                        let val {exp, ty'} = trexp (exp)
                         in ty' end
                     val fieldTypes = foldl getFieldType [] fields
                 in
-                    checkType(hd(fieldTypes), findType(typ))
+                    if checkType(hd(fieldTypes), findType(typ))
+                    then {exp = (), ty = hd(fieldTypes)}
+                    else {exp = (), ty = T.NIL}
                 end 
             | trexp (A.SeqExp((exp, pos)::rst)) = {exp = (), ty = Types.UNIT}
             | trexp (A.AssignExp{var, exp, pos}) = {exp = (), ty = Types.UNIT}
-            | trexp (A.IfExp(test, then', else', pos)) = 
+            | trexp (A.IfExp{test, then', else', pos}) = 
                 let 
-                    val { ty = testType} = transExp test 
-                    val { ty = thenType} = transExp then'
-                    val { ty = elseType} = transExp else'
+                    val { ty = testType} = trexp test 
+                    val { ty = thenType} = trexp then'
+                    val { ty = elseType} = trexp else'
                 in 
-                    (checkType(testType, Types.INT, pos)(checkType(thenType, elseType, pos)))
+                    (checkType(testType, Types.INT, pos);checkType(thenType, elseType, pos);
+                    {exp = (), ty = thenType})
                 end
             | trexp (A.WhileExp{test, body, pos}) = 
                 let 

@@ -45,7 +45,7 @@ struct
             | (T.NAME(name1, tyop1), _) => (checkType(findBaseType(T.NAME(name1, tyop1)), ty2))
             | (_, T.NAME(name2, tyop2)) => (checkType(findBaseType(T.NAME(name2, tyop2)), ty1))
             | _ => false
-    fun checkSameType({exp1, ty1}, {exp2, ty2}, pos) = 
+    fun checkSameType({exp, ty = ty1}, {exp, ty = ty2}) = 
         let 
             val ty1' = findType(ty1)
             val ty2' = findType(ty2)
@@ -61,13 +61,12 @@ struct
                     | MinusOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp = (), ty = Types.INT})
                     | TimesOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp = (), ty = Types.INT})
                     | DivideOp => (checkInt(trexp left, pos); checkInt(trexp right, pos); {exp = (), ty = Types.INT})
-                    | EqOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT}) 
-                    | NeqOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT})
-                    | LtOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT})
-                    | LeOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT})
-                    | GtOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT})
-                    | GeOp => (checkSameType(trexp left, trexp right, pos); {exp = (), ty = Types.INT})
-                    | _ => error pos ("error unknown")
+                    | EqOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT}) 
+                    | NeqOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT})
+                    | LtOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT})
+                    | LeOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT})
+                    | GtOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT})
+                    | GeOp => (checkSameType(trexp left, trexp right); {exp = (), ty = Types.INT})
                 end 
             | trexp(A.LetExp{decs, body, pos}) = 
                 let val {venv = venv', tenv = tenv'} = transDecs(venv, tenv, decs)

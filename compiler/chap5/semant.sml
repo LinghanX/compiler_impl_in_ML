@@ -70,7 +70,7 @@ struct
                 end 
             | trexp(A.LetExp{decs, body, pos}) = 
                 let val {venv = venv', tenv = tenv'} = transDecs(venv, tenv, decs)
-                in transExp(venv', tenv') body end
+                in transExp(venv', tenv', body) end
             | trexp (A.NilExp) = {exp = (), ty = Types.UNIT}
             | trexp (A.IntExp(i)) = {exp = (), ty = Types.INT}
             | trexp (A.StringExp(str, pos)) = {exp = (), ty = Types.STRING}
@@ -135,7 +135,7 @@ struct
             trexp exp
         end 
     
-    and transDecs(venv,tenv) =
+    and transDecs(venv,tenv, decs) =
         let
             fun trdec (venv,tenv,A.VarDec{name,escape,typ=NONE,init,pos}) =
                 let 
@@ -162,7 +162,7 @@ struct
                         val venv'   = foldr transFun (venv,tenv) venv fundecs
                     in {venv=venv',tenv=tenv} end
         in
-            trdec
+            foldl trdec [] (venv, tenv, decs)
         end
     and transParam (venv,tenv) {name,typ,pos} =
           case S.look(tenv,typ) of 
